@@ -262,10 +262,11 @@
         emotionLbl.textContent = emotion;
         emotionLbl.style.color = EMOTION_COLOURS[emotion] || '#95A5A6';
 
-        // Intensity bar
+        // Intensity bar — colour matches the emotion
         const pct = Math.round(data.intensity * 100);
         barFill.style.width = `${pct}%`;
-        intensityPct.textContent = `${pct}%`;
+        barFill.style.background = EMOTION_COLOURS[emotion] || '#4a7fd4';
+        intensityPct.textContent = `${pct}% confidence`;
 
         // Vocal params
         paramRate.textContent  = data.params.rate.toFixed(2);
