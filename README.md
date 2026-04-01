@@ -1,10 +1,5 @@
 ---
-title: Empathy Engine
-emoji: 🎙️
-colorFrom: indigo
-colorTo: purple
-sdk: docker
-pinned: false
+Live Demo: https://huggingface.co/spaces/shashankpandya/empathy-engine
 ---
 
 # The Empathy Engine
