@@ -1,6 +1,6 @@
-flask
-transformers
-torch
-gtts
-pydub
-hypothesis
+flask>=3.0.0
+transformers>=4.40.0
+torch>=2.2.0
+gtts>=2.5.0
+pydub>=0.25.1
+hypothesis>=6.100.0
