@@ -1,3 +1,12 @@
+---
+title: Empathy Engine
+emoji: 🎙️
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # The Empathy Engine
 
 A Python web service that detects the dominant emotion in text using a HuggingFace transformer model, maps it to vocal parameters, and returns an emotionally-modulated MP3 speech file. The service bridges the gap between text-based sentiment and expressive, human-like audio output. A single-page web UI lets you demo the pipeline interactively in your browser.
