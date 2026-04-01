@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Empathy Engine</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px;
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #c9d1f5;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: #7a82b8;
+      margin-bottom: 36px;
+    }
+
+    .card {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 140px;
+      background: #0f3460;
+      color: #e0e0e0;
+      border: 1px solid #1a4a8a;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea::placeholder { color: #5a6a9a; }
+    textarea:focus { border-color: #4a7fd4; }
+
+    button#generate-btn {
+      margin-top: 16px;
+      width: 100%;
+      padding: 14px;
+      background: #4a7fd4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    button#generate-btn:hover:not(:disabled) { background: #3a6fc4; }
+    button#generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Result section */
+    #result {
+      display: none;
+      margin-top: 28px;
+      border-top: 1px solid #0f3460;
+      padding-top: 24px;
+    }
+
+    .emotion-label {
+      font-size: 2rem;
+      font-weight: 700;
+      text-transform: capitalize;
+      margin-bottom: 20px;
+    }
+
+    /* Intensity bar */
+    .intensity-row {
+      margin-bottom: 20px;
+    }
+
+    .intensity-row label {
+      display: block;
+      font-size: 0.85rem;
+      color: #7a82b8;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .bar-track {
+      background: #0f3460;
+      border-radius: 6px;
+      height: 14px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: #4a7fd4;
+      border-radius: 6px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    .intensity-pct {
+      font-size: 0.85rem;
+      color: #a0aad0;
+      margin-top: 4px;
+    }
+
+    /* Params table */
+    .params-section {
+      margin-bottom: 20px;
+    }
+
+    .params-section h3 {
+      font-size: 0.85rem;
+      color: #7a82b8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid #0f3460;
+    }
+
+    th {
+      color: #7a82b8;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td { color: #c9d1f5; }
+
+    /* Audio player */
+    audio {
+      width: 100%;
+      margin-top: 4px;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    audio::-webkit-media-controls-panel { background: #0f3460; }
+  </style>
+</head>
+<body>
+  <h1>The Empathy Engine</h1>
+  <p class="subtitle">Detect emotion. Modulate voice.</p>
+
+  <div class="card">
+    <textarea id="text-input" placeholder="Type something emotional..."></textarea>
+    <button id="generate-btn">Generate Voice</button>
+
+    <div id="result">
+      <div class="emotion-label" id="emotion-label">—</div>
+
+      <div class="intensity-row">
+        <label>Intensity</label>
+        <div class="bar-track">
+          <div class="bar-fill" id="bar-fill"></div>
+        </div>
+        <div class="intensity-pct" id="intensity-pct">0%</div>
+      </div>
+
+      <div class="params-section">
+        <h3>Vocal Parameters</h3>
+        <table>
+          <thead>
+            <tr><th>Rate</th><th>Pitch (semitones)</th><th>Volume (dB)</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="param-rate">—</td>
+              <td id="param-pitch">—</td>
+              <td id="param-volume">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <audio id="audio-player" controls autoplay></audio>
+    </div>
+  </div>
+
+  <script>
+    const EMOTION_COLOURS = {
+      joy:      '#FFD700',
+      sadness:  '#4A90D9',
+      anger:    '#E74C3C',
+      fear:     '#9B59B6',
+      disgust:  '#27AE60',
+      surprise: '#F39C12',
+      neutral:  '#95A5A6'
+    };
+
+    const btn        = document.getElementById('generate-btn');
+    const textInput  = document.getElementById('text-input');
+    const result     = document.getElementById('result');
+    const emotionLbl = document.getElementById('emotion-label');
+    const barFill    = document.getElementById('bar-fill');
+    const intensityPct = document.getElementById('intensity-pct');
+    const paramRate  = document.getElementById('param-rate');
+    const paramPitch = document.getElementById('param-pitch');
+    const paramVol   = document.getElementById('param-volume');
+    const audio      = document.getElementById('audio-player');
+
+    btn.addEventListener('click', async () => {
+      const text = textInput.value.trim();
+      if (!text) { alert('Please enter some text first.'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+
+      try {
+        const res = await fetch('/synthesise', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert(data.error || 'An error occurred.');
+          return;
+        }
+
+        // Reveal result section
+        result.style.display = 'block';
+
+        // Emotion label
+        const emotion = data.emotion || 'neutral';
+        emotionLbl.textContent = emotion;
+        emotionLbl.style.color = EMOTION_COLOURS[emotion] || '#95A5A6';
+
+        // Intensity bar
+        const pct = Math.round(data.intensity * 100);
+        barFill.style.width = `${pct}%`;
+        intensityPct.textContent = `${pct}%`;
+
+        // Vocal params
+        paramRate.textContent  = data.params.rate.toFixed(2);
+        paramPitch.textContent = `${data.params.pitch} st`;
+        paramVol.textContent   = `${data.params.volume_db} dB`;
+
+        // Audio
+        audio.src = data.audio_url;
+        audio.load();
+        audio.play().catch(() => {/* autoplay may be blocked by browser policy */});
+
+      } catch (err) {
+        alert(err.message || 'Network error.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate Voice';
+      }
+    });
+  </script>
+</body>
+</html>
